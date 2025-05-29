@@ -1,93 +1,108 @@
-Flatplan Generator - Structure Modulaire
-Ce projet génère automatiquement des flatplans dans Adobe InDesign à partir de données CSV.
-Structure des fichiers
+# Flatplan Generator - Adobe InDesign
 
-1. constants.jsx
-   Contient toutes les constantes et configurations :
+Générateur automatique de flatplans pour Adobe InDesign à partir de données CSV. Ce script permet de créer rapidement des maquettes de pagination avec une structure modulaire et maintenant du code.
 
-Dimensions et mesures
-Couleurs pastel prédéfinies
-Styles de texte
-Configuration des chemins de fichiers
+## 🚀 Fonctionnalités
 
-2. utilities.jsx
-   Fonctions utilitaires générales :
+- **Génération automatique** : Crée des flatplans complets à partir d'un fichier CSV
+- **Gestion des couleurs** : Attribution automatique de couleurs pastel par section
+- **Support publicitaire** : Gestion spécialisée des annonces avec formats fractionnés (1/2, 1/3, 1/4)
+- **Pagination intelligente** : Calcul automatique des positions et spreads
+- **Séparateurs visuels** : Lignes de séparation tous les 4 pages pour faciliter l'impression
+- **Structure modulaire** : Code organisé en modules réutilisables
 
-Gestion des erreurs et logging
-Chargement des fichiers CSV
-Ouverture du template
-Construction de la liste des pages
+## 📁 Structure du projet
 
-3. colorManager.jsx
-   Gestion des couleurs :
+```
+flatplan-generator/
+├── constants.jsx          # Configuration et constantes
+├── utilities.jsx          # Fonctions utilitaires
+├── colorManager.jsx       # Gestion des couleurs
+├── layoutCalculator.jsx   # Calculs de positionnement  
+├── cardBuilder.jsx        # Construction des éléments visuels
+├── start.jsx             # Fichier principal d'orchestration
+└── README.md
+```
 
-Attribution automatique des couleurs par section
-Création des couleurs dans le document InDesign
-Reset du gestionnaire de couleurs
+## 📋 Prérequis
 
-4. layoutCalculator.jsx
-   Calculs de positionnement :
+- **Adobe InDesign** (versions récentes testées)
+- **Template InDesign** : `gabarit_pagin.indt` avec les masters requis
+- **Masters requis** : "A-Master" et "B-Master"
+- **Fichier CSV** formaté selon la structure attendue
 
-Calcul des positions des pages et spreads
-Calcul des coordonnées des cartes
-Gestion des pages du document
-Application des masters
+## 📊 Format du fichier CSV
 
-5. cardBuilder.jsx
-   Construction des éléments visuels :
+Le fichier CSV doit contenir les colonnes suivantes :
+```csv
+startPage,title,section,pageCount,advertiser,sector
+1,"Article principal",Editorial,2,,
+3,"Publicité Toyota",Publicité,1,Toyota,Automobile
+4,"Actualités",News,3,,
+```
 
-Formatage des titres
-Création des boîtes de section, titre et numéro de page
-Assembly complet des cartes
+## 🛠️ Installation et utilisation
 
-6. main.jsx
-   Fichier principal d'orchestration :
+### Méthode 1 : Fichiers modulaires (recommandée)
 
-Inclusion de tous les modules
-Fonction principale generateFlatplan()
-Gestion globale des erreurs
+1. Placez tous les fichiers `.jsx` dans le même dossier
+2. Ajustez le chemin du template dans `constants.jsx` :
+   ```javascript
+   var PATHS = {
+       templateFile: "chemin/vers/votre/template.indt"
+   };
+   ```
+3. Exécutez `start.jsx` dans Adobe InDesign
 
-Utilisation
-Méthode 1 : Fichier unique consolidé
-Copiez tout le contenu dans un seul fichier .jsx et exécutez-le dans InDesign.
-Méthode 2 : Fichiers modulaires
+### Méthode 2 : Chargement manuel
 
-Placez tous les fichiers dans le même dossier
-Ajustez les chemins dans main.jsx selon votre structure :
-javascript#include "constants.jsx"
-#include "utilities.jsx"
-// etc.
-
-Exécutez le fichier main.jsx dans InDesign
-
-Méthode 3 : Chargement manuel
 Chargez les fichiers dans l'ordre suivant dans InDesign :
+1. `constants.jsx`
+2. `utilities.jsx`
+3. `colorManager.jsx`
+4. `layoutCalculator.jsx`
+5. `cardBuilder.jsx`
+6. `start.jsx`
 
-constants.jsx
-utilities.jsx
-colorManager.jsx
-layoutCalculator.jsx
-cardBuilder.jsx
-main.jsx
+## ⚙️ Configuration
 
-Configuration
-Modifiez le fichier constants.jsx pour :
+Modifiez `constants.jsx` pour personnaliser :
 
-Ajuster les dimensions des cartes
-Changer les couleurs
-Modifier les chemins de fichiers
-Personnaliser les styles de texte
+- **Dimensions des cartes** : largeur, hauteur des sections
+- **Couleurs** : palette de couleurs pastel
+- **Chemins de fichiers** : template et logs
+- **Styles de texte** : tailles et alignements
 
-Avantages de cette structure
+## 🎨 Fonctionnalités avancées
 
-Maintenabilité : Code organisé par fonction
-Réutilisabilité : Modules indépendants
-Debuggage : Plus facile de localiser les erreurs
-Extensibilité : Ajout facile de nouvelles fonctionnalités
-Collaboration : Plusieurs développeurs peuvent travailler sur différents modules
+### Gestion des publicités
+- Support des formats fractionnés (1/2, 1/3, 1/4 de page)
+- Overlay gris avec numéro d'annonce
+- Formatage spécial : "Annonceur – Secteur"
 
-Dépendances
+### Système de couleurs
+- Attribution automatique par section
+- 16 couleurs pastel prédéfinies
+- Réutilisation cohérente des couleurs
 
-Adobe InDesign (testé sur versions récentes)
-Fichier template : gabarit_pagin.indt
-Masters requis : "A-Master" et "B-Master"
+### Pagination intelligente
+- Calcul automatique des spreads
+- Gestion multi-pages
+- Application automatique des masters
+
+## 🐛 Débogage
+
+- Les erreurs sont automatiquement loggées dans `indesign_script_errors.log`
+- Messages d'alerte en cas de problème
+- Structure modulaire pour faciliter le débogage
+
+## 🤝 Contribution
+
+Cette structure modulaire facilite la collaboration :
+- Chaque module a une responsabilité spécifique
+- Code facilement extensible
+- Séparation claire des préoccupations
+
+## 📝 Licence
+
+Projet développé pour la génération automatisée de flatplans dans un environnement de production éditoriale.
