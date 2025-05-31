@@ -2,11 +2,11 @@
 // This file should be loaded last and includes all other modules
 
 // Include all modules (adjust paths as needed)
- // #include "constants.jsx"
- // #include "utilities.jsx"
- // #include "colorManager.jsx"
- // #include "layoutCalculator.jsx"
- // #include "cardBuilder.jsx"
+  #include "constants.jsx"
+  #include "utilities.jsx"
+  #include "colorManager.jsx"
+  #include "layoutCalculator.jsx"
+  #include "cardBuilder.jsx"
 
 // --- Main Function ---
 function generateFlatplan() {
@@ -21,7 +21,6 @@ function generateFlatplan() {
 
         // Reset managers for new document
         ColorManager.reset();
-        CardBuilder.resetSeparators();
 
         // Build page list from CSV
         var pagesToGenerate = buildPageList(lines);
@@ -42,12 +41,9 @@ function generateFlatplan() {
 
             // Create card
             CardBuilder.createCard(page, pageInfo, coordinates.x, coordinates.y, doc);
-            
-            // Create separator line every 4 pages for printers
-            CardBuilder.createSeparatorLine(page, i, position, coordinates, doc);
         }
 
-        alert("Flatplan generated from template with block pagination!");
+        alert("Flatplan generated! Total pages: " + pagesToGenerate.length);
 
     } catch (e) {
         var errorMsg = "Error in generateFlatplan: " + e.message + (e.line ? (" (Line: " + e.line + ")") : "");

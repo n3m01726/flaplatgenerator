@@ -25,7 +25,6 @@ var LAYOUT = {
 
 // Couleurs pastel prédéfinies
 var PASTEL_COLORS = [
-    { name: "GrayAd", rgb: [240, 240, 240] },
     { name: "Peach", rgb: [255, 223, 186] },
     { name: "Yellow", rgb: [255, 255, 186] },
     { name: "Mint", rgb: [186, 255, 201] },

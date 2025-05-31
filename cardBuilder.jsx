@@ -2,14 +2,24 @@
 
 var CardBuilder = {
     
-    // Track created separator lines to avoid duplicates
-    createdSeparators: {},
-    
-    // Format title based on section type
+    // Format title based on section type and fractional ads
     formatTitle: function(pageInfo) {
-        return (pageInfo.section.toLowerCase() === "publicité" && pageInfo.advertiser && pageInfo.sector)
-            ? pageInfo.title + "\n" + pageInfo.advertiser + " – " + pageInfo.sector
-            : pageInfo.title;
+        if (pageInfo.adSize === "fractional" && pageInfo.fractionalAds && pageInfo.fractionalAds.length > 0) {
+            // Display fractional ads
+            var titles = [];
+            for (var i = 0; i < pageInfo.fractionalAds.length; i++) {
+                var ad = pageInfo.fractionalAds[i];
+                var fraction = AD_FRACTIONS[ad.adSize] ? AD_FRACTIONS[ad.adSize].label : ad.adSize;
+                var adTitle = ad.advertiser && ad.sector ? 
+                    ad.advertiser + " – " + ad.sector : ad.title;
+                titles.push(fraction + " " + adTitle);
+            }
+            return titles.join("\n---\n");
+        } else if (pageInfo.section.toLowerCase() === "publicité" && pageInfo.advertiser && pageInfo.sector) {
+            return pageInfo.title + "\n" + pageInfo.advertiser + " – " + pageInfo.sector;
+        } else {
+            return pageInfo.title;
+        }
     },
     
     // Create section box
@@ -30,8 +40,8 @@ var CardBuilder = {
         return sectionBox;
     },
     
-    // Create title box
-    createTitleBox: function(page, x, y, title, color, borderColor, strokeTint) {
+    // Create title box with fractional ad visualization
+    createTitleBox: function(page, x, y, title, color, borderColor, strokeTint, pageInfo) {
         var titleBox = page.textFrames.add({
             geometricBounds: [y + DIMENSIONS.sectionHeight, x, y + DIMENSIONS.sectionHeight + DIMENSIONS.titleHeight, x + DIMENSIONS.cardWidth],
             contents: title
@@ -42,11 +52,34 @@ var CardBuilder = {
         titleBox.strokeTint = strokeTint;
         titleBox.strokeWeight = 1;
         titleBox.strokeType = "Dotted";
-        titleBox.texts[0].pointSize = TEXT_STYLES.title.pointSize;
+        titleBox.texts[0].pointSize = (pageInfo && pageInfo.adSize === "fractional") ? 5 : TEXT_STYLES.title.pointSize;
         titleBox.texts[0].justification = TEXT_STYLES.title.justification;
         titleBox.textFramePreferences.verticalJustification = VerticalJustification.CENTER_ALIGN;
         
+        // Add visual dividers for fractional ads
+        if (pageInfo && pageInfo.adSize === "fractional" && pageInfo.fractionalAds && pageInfo.fractionalAds.length > 1) {
+            this.addFractionalDividers(page, x, y, pageInfo.fractionalAds.length, borderColor);
+        }
+        
         return titleBox;
+    },
+    
+    // Add visual dividers for fractional ads
+    addFractionalDividers: function(page, x, y, adCount, borderColor) {
+        var titleBoxY = y + DIMENSIONS.sectionHeight;
+        var dividerHeight = DIMENSIONS.titleHeight / adCount;
+        
+        // Create horizontal divider lines
+        for (var i = 1; i < adCount; i++) {
+            var dividerY = titleBoxY + (i * dividerHeight);
+            var dividerLine = page.graphicLines.add();
+            dividerLine.paths[0].pathPoints[0].anchor = [dividerY, x];
+            dividerLine.paths[0].pathPoints[1].anchor = [dividerY, x + DIMENSIONS.cardWidth];
+            dividerLine.strokeColor = borderColor;
+            dividerLine.strokeWeight = 0.5;
+            dividerLine.strokeType = "Solid";
+            dividerLine.strokeTint = 30;
+        }
     },
     
     // Create page number box
@@ -73,170 +106,17 @@ var CardBuilder = {
         
         return pageBox;
     },
-  // --- Create overlay for partial ad ---
-createAdOverlayBox: function(page, pageInfo, x, y, doc) {
-    var format = pageInfo.title.match(/(\d{6})\s*-\s*[^-]+?\s*-\s*(\d\/\d)/);
-    if (!format) return;
-
-    var adNumber = format[1];
-    var fraction = format[2];
-    var widthRatio = 1;
-
-    switch (fraction) {
-        case "1/2":
-            widthRatio = 0.5; break;
-        case "1/3":
-            widthRatio = 1/3; break;
-        case "1/4":
-            widthRatio = 0.25; break;
-        default:
-            return;
-    }
-
-    var overlayWidth = DIMENSIONS.cardWidth * widthRatio;
-    var borderColor = doc.swatches.itemByName("Black");
-
-    var graySwatch = doc.colors.itemByName("GrisPub");
-    if (!graySwatch.isValid) {
-        graySwatch = doc.colors.add({
-            name: "GrisPub",
-            model: ColorModel.PROCESS,
-            space: ColorSpace.CMYK,
-            colorValue: [0, 0, 0, 20]
-        });
-    }
-
-    var overlayBox = page.textFrames.add({
-        geometricBounds: [
-            y + DIMENSIONS.sectionHeight,
-            x,
-            y + DIMENSIONS.sectionHeight + DIMENSIONS.titleHeight,
-            x + overlayWidth
-        ],
-        contents: adNumber
-    });
-
-    overlayBox.fillColor = graySwatch;
-    overlayBox.fillTint = 100;
-    overlayBox.strokeColor = borderColor;
-    overlayBox.strokeTint = 50;
-    overlayBox.strokeWeight = 1;
-    overlayBox.strokeType = "Solid";
-
-    overlayBox.texts[0].justification = Justification.CENTER_ALIGN;
-    overlayBox.texts[0].pointSize = 6;
-    overlayBox.textFramePreferences.verticalJustification = VerticalJustification.CENTER_ALIGN;
-},
-  
-// Create complete card with optional ad size overlay
-createCard: function(page, pageInfo, x, y, doc) {
-    var title = this.formatTitle(pageInfo);
-    var color = ColorManager.getPastelColor(pageInfo.section, doc);
-    var borderColor = doc.swatches.itemByName("Black");
-    var strokeTint = 50;
-
-    // Crée les boîtes principales
-    this.createSectionBox(page, x, y, pageInfo.section, borderColor, strokeTint);
-    this.createTitleBox(page, x, y, title, color, borderColor, strokeTint);
-    this.createPageBox(page, x, y, pageInfo.pageNum, borderColor, strokeTint);
-
-    // Si section "Publicité" et format fractionné
-    if (pageInfo.section.toLowerCase() === "publicité" && pageInfo.adSize) {
-        var adSize = pageInfo.adSize.trim().toLowerCase();
-        var fractionHeight = 0;
-
-        switch (adSize) {
-            case "1/2":
-                fractionHeight = CARD_HEIGHT / 2;
-                break;
-            case "1/3":
-                fractionHeight = CARD_HEIGHT / 3;
-                break;
-            case "1/4":
-                fractionHeight = CARD_HEIGHT / 4;
-                break;
-            default:
-                fractionHeight = 0;
-        }
-
-        // Si format fractionné reconnu
-        if (fractionHeight > 0) {
-            var adBox = page.textFrames.add({
-                geometricBounds: [
-                    y + DIMENSIONS.sectionHeight, // top
-                    x,                             // left
-                    y + DIMENSIONS.sectionHeight + fractionHeight, // bottom
-                    x + DIMENSIONS.cardWidth       // right
-                ],
-                contents: this.extractAdNumber(pageInfo.title)
-            });
-
-            // Style gris visible
-            adBox.fillColor = doc.swatches.itemByName("Black");
-            adBox.fillTint = 15; // Gris clair
-            adBox.strokeWeight = 0;
-            adBox.texts[0].fillColor = doc.swatches.itemByName("Paper");
-            adBox.texts[0].pointSize = 10;
-            adBox.texts[0].justification = Justification.CENTER_ALIGN;
-            adBox.textFramePreferences.verticalJustification = VerticalJustification.CENTER_ALIGN;
-
-            // $.writeln("GrisPub ajouté pour " + pageInfo.title);
-        }
-    }
-},
-
-// Helper pour extraire le numéro d'annonce au début du titre (ex: "0001165 - ...")
-extractAdNumber: function(title) {
-    var match = title.match(/^(\d{6,})/);
-    return match ? match[1] : "";
-},
-
-
-    // Create separator line every 4 pages
-    createSeparatorLine: function(page, pageIndex, position, coordinates, doc) {
-        // Only create separator every 4 pages and not on first page
-        if (pageIndex > 0 && (pageIndex % 4) === 0) {
-            var separatorKey = position.docPageIndex + "_" + Math.floor(pageIndex / 4);
-            
-            // Avoid duplicate separators on same page
-            if (!this.createdSeparators[separatorKey]) {
-                var borderColor = doc.swatches.itemByName("Black");
-                var currentStartY = (position.docPageIndex === 0) ? DIMENSIONS.startY : 0;
-                
-                // Calculate separator position - vertical line before the page group
-                var separatorX = coordinates.x - (DIMENSIONS.spreadGutter / 2);
-                var separatorY1 = currentStartY + DIMENSIONS.margin;
-                var separatorY2 = separatorY1 + (LAYOUT.maxLinesPerPage * (CARD_HEIGHT + DIMENSIONS.spreadGutter)) - DIMENSIONS.spreadGutter;
-                
-                // Create the dashed separator line
-                var separatorLine = page.graphicLines.add();
-                separatorLine.paths[0].pathPoints[0].anchor = [separatorY1 + 8, separatorX]; // Start slightly below dot
-                separatorLine.paths[0].pathPoints[1].anchor = [separatorY2, separatorX];
-                separatorLine.strokeColor = borderColor;
-                separatorLine.strokeWeight = 1;
-                separatorLine.strokeType = "Dashed";
-                separatorLine.strokeTint = 50;
-                
-                // Create a dot at the top of the line
-                var dot = page.ovals.add();
-                var dotSize = 4; // 4pt diameter
-                dot.geometricBounds = [
-                    separatorY1, 
-                    separatorX - (dotSize/2), 
-                    separatorY1 + dotSize, 
-                    separatorX + (dotSize/2)
-                ];
-                dot.fillColor = borderColor;
-                dot.fillTint = 50;
-                dot.strokeWeight = 0; // No stroke on the dot
-                
-                this.createdSeparators[separatorKey] = true;
-            }
-        }
-    },
     
-    // Reset separator tracking for new document
-    resetSeparators: function() {
-        this.createdSeparators = {};
+    // Create complete card
+    createCard: function(page, pageInfo, x, y, doc) {
+        var title = this.formatTitle(pageInfo);
+        var color = ColorManager.getPastelColor(pageInfo.section, doc);
+        var borderColor = doc.swatches.itemByName("Black");
+        var strokeTint = 50;
+        
+        // Create all three boxes
+        this.createSectionBox(page, x, y, pageInfo.section, borderColor, strokeTint);
+        this.createTitleBox(page, x, y, title, color, borderColor, strokeTint, pageInfo);
+        this.createPageBox(page, x, y, pageInfo.pageNum, borderColor, strokeTint);
     }
 };
